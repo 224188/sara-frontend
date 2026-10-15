@@ -30,7 +30,7 @@
     </div>
 
     <script>
-        // Aapka backend Render URL jo humne abhi banaya tha
+        // Bilkul sahi live backend endpoints connection
         const BACKEND_URL = "https://onrender.com";
         const sessionId = "boss_mobile_session";
 
@@ -40,28 +40,33 @@
             const text = input.value.trim();
             if (!text) return;
 
-            // User ka message screen par dikhao
             appendMessage(text, "user");
             input.value = "";
             input.disabled = true;
             btn.disabled = true;
 
             try {
-                // Render Backend ko request bhejna
                 const response = await fetch(BACKEND_URL, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
                     body: JSON.stringify({ session_id: sessionId, message: text })
                 });
+                
+                if (!response.ok) {
+                    throw new Error("Server not responding properly");
+                }
                 
                 const data = await response.json();
                 if (data.response) {
                     appendMessage(data.response, "sara");
                 } else {
-                    appendMessage("Kuch gadbad hui Boss, dimaag response nahi de raha.", "sara");
+                    appendMessage("Jawab khali aaya Boss, dimaag check kijiye.", "sara");
                 }
             } catch (error) {
-                appendMessage("Network error Boss! Lagta hai Render server so raha hai.", "sara");
+                appendMessage("Jagne mein thoda time lag raha hai Boss, 10 seconds baad ek aur baar try kijiye!", "sara");
             } finally {
                 input.disabled = false;
                 btn.disabled = false;
