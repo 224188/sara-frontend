@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useSaraChat } from './hooks/useSaraChat'; // Path dhyan se check karna Boss
+import { useSaraChat } from './hooks/useSaraChat'; // File path confirm kar lena, Boss
 
-// SARA ki alag-alag real expressions ke placeholders
-// In links ki jagah apni anime character ki specific images/GIFs ka link daal dena, Boss!
+// SARA ki expressions aur actions ke specific visual states
+// In placeholders ki jagah aap apni anime character image aur animation GIFs ke live URLs daal dena, Boss!
 const SARA_ANIMATIONS = {
-  idle: "https://unsplash.com",      // Normal eye blinking avatar
-  talking: "https://giphy.com",            // Lip sync/Talking animation
-  hairSanwarna: "https://giphy.com",          // Balo ko sanwarne wala loop
+  idle: "https://unsplash.com",      // Eye blinking avatar image
+  talking: "https://giphy.com",            // Lip-sync talking animation loop
+  hairSanwarna: "https://giphy.com",          // Baal sanwarne wala loop
 };
 
 export const App = () => {
@@ -15,12 +15,13 @@ export const App = () => {
   const [showInputBox, setShowInputBox] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
-  // SARA ki current visual mood state manage karne ke liye
+  // SARA visual state manager
   const [currentAvatar, setCurrentAvatar] = useState(SARA_ANIMATIONS.idle);
 
+  // Core backend API connector hook
   const { messages, sendMessage, loading } = useSaraChat('https://render.com', 'boss_session_1');
 
-  // Screen size check (PC vs Mobile)
+  // Screen check (Desktop/Mobile responsive layout adjustment)
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     handleResize();
@@ -28,7 +29,7 @@ export const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // SECRET SHORTCUT: Keyboard par 'i' key dabate hi input toggle hoga (PC me)
+  // SECRET KEYBOARD COMMAND: Key 'i' press karte hi input reveal/hide hoga (Sirf PC par)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (document.activeElement?.tagName !== 'INPUT' && e.key.toLowerCase() === 'i') {
@@ -39,30 +40,29 @@ export const App = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // NATURAL HAIR TUCKING ENGINE (Har 15 to 30 minutes me ek baar random check)
+  // NATURAL IDLE BEHAVIOR: Exact 15 minutes ke gap par hair tucking action ka validation
   useEffect(() => {
     if (!loading) {
       const interval = setInterval(() => {
         const rand = Math.random();
-        
-        // 30% chance har interval par ki wo baal sanwaregi (Taaki action ekdum randoom aur natural lage)
+        // 30% chance engine random timing control ke liye
         if (rand < 0.30) {
           setCurrentAvatar(SARA_ANIMATIONS.hairSanwarna);
-          setTimeout(() => setCurrentAvatar(SARA_ANIMATIONS.idle), 4000); // 4 sec ka hair animation loop
+          setTimeout(() => setCurrentAvatar(SARA_ANIMATIONS.idle), 4000); // 4 seconds animation timer
         }
-      }, 900000); // 900,000 ms = exact 15 minutes me trigger check hoga
+      }, 900000); // 900,000 milliseconds = 15 Minutes window
 
       return () => clearInterval(interval);
     }
   }, [loading]);
 
-  // Trigger talking animation when SARA is thinking or responding
+  // Speaking state toggler trigger
   useEffect(() => {
     if (loading) {
       setCurrentAvatar(SARA_ANIMATIONS.talking);
     } else if (messages.length > 0 && messages[messages.length - 1].sender === 'sara') {
       setCurrentAvatar(SARA_ANIMATIONS.talking);
-      const timer = setTimeout(() => setCurrentAvatar(SARA_ANIMATIONS.idle), 4000); // 4 sec baad idle
+      const timer = setTimeout(() => setCurrentAvatar(SARA_ANIMATIONS.idle), 4000);
       return () => clearTimeout(timer);
     }
   }, [loading, messages]);
@@ -78,7 +78,7 @@ export const App = () => {
     setInputText('');
   };
 
-  // Dashboard signals check karna
+  // Automated layout controller derived from backend tokens
   useEffect(() => {
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
@@ -102,10 +102,10 @@ export const App = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'row', height: '100vh', fontFamily: 'Arial, sans-serif', backgroundColor: '#000000', color: '#fff', position: 'relative', overflow: 'hidden' }}>
       
-      {/* MAIN LAYOUT */}
+      {/* 1. INTERFACE MAIN CHAT VIEW (Pitch Black Grid Area) */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px', height: '100%', backgroundColor: '#000000' }}>
         
-        {/* CENTERED AVATAR ENGINE (SARA Ka Visual Face) */}
+        {/* AVATAR DOCK LOGIC (Mobile user avatar tap par box activate kar sakte hain) */}
         <div 
           onClick={() => isMobile && setShowInputBox((prev) => !prev)}
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: '20px', cursor: 'pointer' }}
@@ -119,7 +119,7 @@ export const App = () => {
           <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: '#4caf50' }}>• ONLINE</p>
         </div>
         
-        {/* CHAT DISPLAY */}
+        {/* CONVERSATION WINDOW CONTAINER */}
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '20px', paddingRight: '5px', marginTop: '20px' }}>
           {messages.map((msg, index) => (
             <div key={index} style={{ margin: '12px 0', textAlign: msg.sender === 'user' ? 'right' : 'left' }}>
@@ -140,7 +140,7 @@ export const App = () => {
           {loading && <p style={{ color: '#aaa', fontStyle: 'italic', fontSize: '14px' }}>SARA soch rahi hai, Boss...</p>}
         </div>
 
-        {/* GHOST INPUT BOX */}
+        {/* GHOST INVISIBLE INPUT MODULE */}
         {showInputBox && (
           <div style={{ display: 'flex', gap: '10px', paddingBottom: '5px' }}>
             <input 
@@ -159,21 +159,35 @@ export const App = () => {
         )}
       </div>
 
-      {/* SECRET EXECUTIVE DASHBOARD */}
+      {/* 2. SECRET EXECUTIVE DASHBOARD LAYOUT */}
       {showDashboard && (
         <div style={{ position: isMobile ? 'absolute' : 'relative', top: 0, right: 0, width: isMobile ? '100%' : '400px', height: '100%', borderLeft: isMobile ? 'none' : '1px solid #222', backgroundColor: '#000000', padding: '20px', display: 'flex', flexDirection: 'column', zIndex: 1000, boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '10px' }}>
-            <h3 style={{ margin: 0, fontSize: '18px' }}>Executive Dashboard</h3>
+            <h3 style={{ margin: 0, fontSize: '18px', color: '#fff' }}>Executive Dashboard</h3>
             <button onClick={() => setShowDashboard(false)} style={{ background: 'none', border: 'none', color: '#ff3b30', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' }}>Close ✕</button>
           </div>
+          
           <div style={{ marginTop: '20px', flex: 1, overflowY: 'auto' }}>
+            {/* WIDGET 1: TRADING DESK MANAGEMENT */}
             <div style={{ background: '#111111', padding: '15px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #222' }}>
-              <h4 style={{ margin: '0 0 8px 0', color: '#ff9800' }}>Trading Desk Alerts</h4>
-              <p style={{ color: '#aaa', fontSize: '14px', margin: 0 }}>SARA is monitoring TradingView levels...</p>
+              <h4 style={{ margin: '0 0 8px 0', color: '#ff9800' }}>📊 Trading Desk Alerts</h4>
+              <div style={{ fontSize: '13px', color: '#aaa' }}>
+                <p style={{ margin: '4px 0' }}>● NIFTY 24,500 — <span style={{ color: '#4caf50' }}>HIT ✔</span></p>
+                <p style={{ margin: '4px 0' }}>● BANKNIFTY 52,200 — <span style={{ color: '#ff9800' }}>WATCHING...</span></p>
+              </div>
             </div>
+            
+            {/* WIDGET 2: RUNTIME ENGINE METRICS */}
+            <div style={{ background: '#111111', padding: '15px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #222' }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#2196f3' }}>🧠 SARA Brain Status</h4>
+              <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>Model: gemini-2.5-flash (Free Tier)</p>
+              <p style={{ color: '#4caf50', fontSize: '13px', margin: '5px 0 0 0' }}>Database: Async MongoDB Connected</p>
+            </div>
+
+            {/* WIDGET 3: BOSS TASK PANEL */}
             <div style={{ background: '#111111', padding: '15px', borderRadius: '8px', border: '1px solid #222' }}>
-              <h4 style={{ margin: '0 0 8px 0', color: '#2196f3' }}>Tasks Summary</h4>
-              <p style={{ color: '#aaa', fontSize: '14px', margin: 0 }}>All clear, Boss!</p>
+              <h4 style={{ margin: '0 0 8px 0', color: '#e91e63' }}>📝 Executive Tasks</h4>
+              <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>● Morning Market Briefing (08:30 AM)</p>
             </div>
           </div>
         </div>
