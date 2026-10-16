@@ -30,7 +30,8 @@
 <body>
     <div class="main-chat">
         <div class="avatar-container" onclick="startVoiceListening()">
-            <img id="saraAvatar" src="https://unsplash.com" alt="SARA" class="avatar-img">
+            <!-- SARA Image Link Fixed with stable anime generator source, Boss -->
+            <img id="saraAvatar" src="https://dicebear.com" alt="SARA" class="avatar-img">
             <h2 class="avatar-name">SARA</h2>
             <div class="avatar-status" id="saraLiveStatus">● ONLINE</div>
         </div>
@@ -63,10 +64,11 @@
     <script>
         const BACKEND_BASE = "https://onrender.com";
         const sessionId = "boss_mobile_session";
+        // Stable placeholder image states linked
         const SARA_ASSETS = {
-            idle: "https://unsplash.com",
-            talking: "https://unsplash.com", 
-            hair: "https://unsplash.com"
+            idle: "https://dicebear.com",
+            talking: "https://dicebear.com", 
+            hair: "https://dicebear.com"
         };
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
