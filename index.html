@@ -11,27 +11,46 @@
         }
         .main-chat { flex: 1; display: flex; flex-direction: column; padding: 20px; height: 100%; box-sizing: border-box; background-color: #000000; align-items: center; justify-content: center; }
         .avatar-container { display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; user-select: none; }
-        .avatar-img { width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 3px solid #ff9800; box-shadow: 0 0 25px rgba(255,152,0,0.2); transition: all 0.5s ease; }
-        .avatar-img.listening { border-color: #4caf50; box-shadow: 0 0 35px rgba(76, 175, 80, 0.6); animation: pulse 1.5s infinite; }
+        
+        /* Fixed Circle Frame for Boss's Chosen Avatar Image */
+        .avatar-img-box { width: 220px; height: 220px; border-radius: 50%; border: 3px solid #ff9800; box-shadow: 0 0 25px rgba(255,152,0,0.2); transition: all 0.5s ease; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #000; }
+        .avatar-img-box.listening { border-color: #4caf50; box-shadow: 0 0 35px rgba(76, 175, 80, 0.6); animation: pulse 1.5s infinite; }
+        
+        /* Animating Canvas Layers for Lip Sync and Eye Blink Overlays */
+        .avatar-wrapper { position: relative; width: 100%; height: 100%; }
+        .base-face { width: 100%; height: 100%; object-fit: cover; }
+        .lip-overlay { position: absolute; top: 52%; left: 47%; width: 12%; height: 6%; background: #ffb74d; border-radius: 50%; display: none; transform: translateX(-50%); border: 2px solid #263238; }
+        .eye-overlay-left { position: absolute; top: 43%; left: 40%; width: 8%; height: 4%; background: #000; display: none; border-radius: 4px; }
+        .eye-overlay-right { position: absolute; top: 43%; left: 56%; width: 8%; height: 4%; background: #000; display: none; border-radius: 4px; }
+
         .avatar-name { margin: 15px 0 0 0; font-size: 26px; font-weight: bold; letter-spacing: 1px; }
         .avatar-status { margin: 5px 0 0 0; font-size: 13px; color: #4caf50; font-weight: 500; }
         .status-text { color: #888; font-style: italic; font-size: 14px; margin-top: 20px; text-align: center; max-width: 80%; }
+        
         .dashboard-panel { width: 400px; height: 100%; border-left: 1px solid #222; background-color: #000000; padding: 20px; display: none; flex-direction: column; box-sizing: border-box; z-index: 1000; }
         .dash-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 10px; }
         .dash-close-btn { background: none; border: none; color: #ff3b30; font-size: 18px; font-weight: bold; cursor: pointer; padding: 0; }
         .dash-content { margin-top: 20px; flex: 1; overflow-y: auto; }
         .widget { background-color: #111111; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #222; }
         .widget h4 { margin: 0 0 8px 0; }
+        
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.04); } 100% { transform: scale(1); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @media (max-width: 768px) { .dashboard-panel { position: absolute; top: 0; right: 0; width: 100%; } }
     </style>
 </head>
 <body>
     <div class="main-chat">
         <div class="avatar-container" onclick="startVoiceListening()">
-            <!-- SARA Image Link Fixed with stable anime generator source, Boss -->
-            <img id="saraAvatar" src="https://dicebear.com" alt="SARA" class="avatar-img">
+            <div id="avatarBox" class="avatar-img-box">
+                <div class="avatar-wrapper">
+                    <!-- Base picture mapping configuration using the exact avatar image -->
+                    <img id="saraBaseImg" src="https://unsplash.com" alt="SARA" class="base-face">
+                    <!-- Real-time animation overlay shapes -->
+                    <div id="saraLips" class="lip-overlay"></div>
+                    <div id="saraEyeL" class="eye-overlay-left"></div>
+                    <div id="saraEyeR" class="eye-overlay-right"></div>
+                </div>
+            </div>
             <h2 class="avatar-name">SARA</h2>
             <div class="avatar-status" id="saraLiveStatus">● ONLINE</div>
         </div>
@@ -39,13 +58,13 @@
     </div>
     <div class="dashboard-panel" id="secretDashboard">
         <div class="dash-header">
-            <h3 style="margin: 0; font-size: 18px; color: #fff;">Executive Dashboard</h3>
+            <h3>Executive Dashboard</h3>
             <button class="dash-close-btn" onclick="setDashboardView(false)">Close ✕</button>
         </div>
         <div class="dash-content">
             <div class="widget">
                 <h4 style="color: #ff9800;">📊 Trading Desk Alerts</h4>
-                <div style="font-size: 13px; color: #aaa; line-height: 1.6;">
+                <div style="font-size: 13px; color: #aaa;">
                     <p style="margin: 4px 0;">● NIFTY 24,500 — <span style="color: #4caf50;">HIT ✔</span></p>
                     <p style="margin: 4px 0;">● BANKNIFTY 52,200 — <span style="color: #ff9800;">WATCHING...</span></p>
                 </div>
@@ -64,92 +83,116 @@
     <script>
         const BACKEND_BASE = "https://onrender.com";
         const sessionId = "boss_mobile_session";
-        // Stable placeholder image states linked
-        const SARA_ASSETS = {
-            idle: "https://dicebear.com",
-            talking: "https://dicebear.com", 
-            hair: "https://dicebear.com"
-        };
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
         let isSpeakingOrListening = false;
+
+        // Visual lip sync engine layout manipulation
+        function triggerLipSync(speak) {
+            const lips = document.getElementById("saraLips");
+            clearInterval(window.lipsInterval);
+            if (speak) {
+                lips.style.display = "block";
+                window.lipsInterval = setInterval(() => {
+                    lips.style.height = lips.style.height === "3%" ? "8%" : "3%";
+                }, 120);
+            } else {
+                lips.style.display = "none";
+            }
+        }
+
+        // Natural automated eye blinking interval loop parameters
+        setInterval(() => {
+            if (!isSpeakingOrListening) {
+                const eyeL = document.getElementById("saraEyeL");
+                const eyeR = document.getElementById("saraEyeR");
+                eyeL.style.display = "block"; eyeR.style.display = "block"; // Eye closes
+                setTimeout(() => {
+                    eyeL.style.display = "none"; eyeR.style.display = "none"; // Eye opens
+                }, 180);
+            }
+        }, 3500); // 3.5 seconds structural loop
+
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.continuous = false;
             recognition.lang = 'hi-IN';
             recognition.interimResults = false;
+
             recognition.onstart = () => {
                 isSpeakingOrListening = true;
-                document.getElementById("saraAvatar").classList.add("listening");
+                document.getElementById("avatarBox").classList.add("listening");
                 document.getElementById("saraLiveStatus").innerText = "● LISTENING";
-                document.getElementById("saraLiveStatus").style.color = "#4caf50";
                 document.getElementById("voiceStatusText").innerText = "Listening to you, Boss...";
             };
+
             recognition.onerror = (e) => { console.error(e); resetToIdleState(); };
-            recognition.onend = () => { document.getElementById("saraAvatar").classList.remove("listening"); };
+            recognition.onend = () => { document.getElementById("avatarBox").classList.remove("listening"); };
+            
             recognition.onresult = async (event) => {
                 const speechToText = event.results.transcript;
                 document.getElementById("voiceStatusText").innerText = `You: "${speechToText}"`;
                 await sendVoicePayloadToBackend(speechToText);
             };
-        } else {
-            document.getElementById("voiceStatusText").innerText = "Speech Recognition not supported. Use Chrome!";
         }
+
         function startVoiceListening() {
             if (recognition && !isSpeakingOrListening) {
                 window.speechSynthesis.cancel();
                 recognition.start();
             }
         }
+
         function resetToIdleState() {
             isSpeakingOrListening = false;
-            document.getElementById("saraAvatar").src = SARA_ASSETS.idle;
+            triggerLipSync(false);
             document.getElementById("saraLiveStatus").innerText = "● ONLINE";
-            document.getElementById("saraLiveStatus").style.color = "#4caf50";
             document.getElementById("voiceStatusText").innerText = "Tap SARA's face to talk again...";
         }
-        setInterval(() => {
-            const avatar = document.getElementById("saraAvatar");
-            if (!isSpeakingOrListening) {
-                if (Math.random() < 0.30) {
-                    avatar.src = SARA_ASSETS.hair;
-                    setTimeout(() => { if(!isSpeakingOrListening) avatar.src = SARA_ASSETS.idle; }, 4000);
-                }
-            }
-        }, 900000);
+
         function setDashboardView(show) { document.getElementById("secretDashboard").style.display = show ? "flex" : "none"; }
+
         async function sendVoicePayloadToBackend(text) {
-            const avatar = document.getElementById("saraAvatar");
             const statusText = document.getElementById("voiceStatusText");
             document.getElementById("saraLiveStatus").innerText = "● THINKING";
             statusText.innerText = "SARA soch rahi hai...";
-            avatar.src = SARA_ASSETS.idle;
+
             try {
                 const response = await fetch(BACKEND_BASE + "/chat", {
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ session_id: sessionId, message: text })
                 });
                 const data = await response.json();
+                
                 if (data.response) { 
                     const reply = data.response;
                     statusText.innerText = `SARA: "${reply}"`;
+                    
                     const lowerReply = reply.toLowerCase();
                     if (lowerReply.includes("dashboard khol rahi hu") || lowerReply.includes("opening dashboard") || lowerReply.includes("dashboard open")) { setDashboardView(true); } 
                     else if (lowerReply.includes("dashboard band") || lowerReply.includes("closing dashboard")) { setDashboardView(false); }
+                    
                     speakResponse(reply);
                 } else { speakResponse("Boss, mujhe aapka jawab nahi mila."); }
-            } catch (error) { speakResponse("Sorry Boss, lagta hai network gaddabad hai!"); }
+            } catch (error) {
+                speakResponse("Sorry Boss, lagta hai network dikkat de raha hai!");
+            }
         }
+
         function speakResponse(text) {
             if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'hi-IN'; utterance.rate = 1.0; utterance.pitch = 1.1;
-                utterance.onstart = () => {
-                    document.getElementById("saraAvatar").src = SARA_ASSETS.talking;
+                const SpeechSynthesisUtterance = window.SpeechSynthesisUtterance;
+                const finalUtterance = new SpeechSynthesisUtterance(text);
+                finalUtterance.lang = 'hi-IN'; finalUtterance.rate = 1.0; finalUtterance.pitch = 1.1;
+                
+                finalUtterance.onstart = () => {
+                    triggerLipSync(true);
                     document.getElementById("saraLiveStatus").innerText = "● SPEAKING";
                 };
-                utterance.onend = () => { resetToIdleState(); };
-                window.speechSynthesis.speak(utterance);
+
+                finalUtterance.onend = () => { resetToIdleState(); };
+                window.speechSynthesis.speak(finalUtterance);
             } else { resetToIdleState(); }
         }
     </script>
