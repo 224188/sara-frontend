@@ -5,82 +5,133 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SARA - Boss's AI</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-        .header { background-color: #1f1f1f; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; border-bottom: 1px solid #333; color: #ff9800; display: flex; justify-content: space-between; align-items: center; }
-        .chat-container { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .message { max-width: 75%; padding: 10px 15px; border-radius: 15px; font-size: 16px; line-height: 1.4; word-wrap: break-word; }
-        .user { background-color: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .sara { background-color: #2a2a2a; color: #e0e0e0; align-self: flex-start; border-bottom-left-radius: 2px; }
-        .input-area { padding: 10px; background-color: #1f1f1f; display: flex; gap: 10px; border-top: 1px solid #333; }
-        input { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid #444; background-color: #2d2d2d; color: white; font-size: 16px; outline: none; }
-        button { background-color: #ff9800; color: black; border: none; padding: 0 20px; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #000000; color: #ffffff; margin: 0; display: flex; flex-direction: row; height: 100vh; position: relative; overflow: hidden;
+        }
+        .main-chat { flex: 1; display: flex; flex-direction: column; padding: 20px; height: 100%; box-sizing: border-box; background-color: #000000; }
+        .avatar-container { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px; cursor: pointer; user-select: none; }
+        .avatar-img { width: 160px; height: 160px; border-radius: 50%; object-fit: cover; border: 3px solid #ff9800; box-shadow: 0 0 20px rgba(255,152,0,0.2); transition: all 0.5s ease; }
+        .avatar-name { margin: 10px 0 0 0; font-size: 22px; font-weight: bold; letter-spacing: 1px; }
+        .avatar-status { margin: 3px 0 0 0; font-size: 11px; color: #4caf50; }
+        .chat-container { flex: 1; padding: 15px 5px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 20px; }
+        .message { max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 15px; line-height: 1.4; word-wrap: break-word; }
+        .user { background-color: #007bff; color: white; align-self: flex-end; }
+        .sara { background-color: #111111; color: #ffffff; align-self: flex-start; border: 1px solid #222; }
+        .loading-text { color: #aaa; font-style: italic; font-size: 14px; display: none; }
+        .input-area { padding: 5px 0; display: none; gap: 10px; animation: fadeIn 0.3s ease; }
+        input { flex: 1; padding: 14px; border-radius: 8px; border: 1px solid #333; background-color: #111111; color: white; font-size: 15px; outline: none; }
+        button { background-color: #ff9800; color: black; border: none; padding: 0 24px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; }
         button:disabled { background-color: #555; color: #888; }
-        .wakeup-btn { background-color: #4caf50; color: white; padding: 5px 10px; font-size: 12px; border-radius: 5px; }
+        .dashboard-panel { width: 400px; height: 100%; border-left: 1px solid #222; background-color: #000000; padding: 20px; display: none; flex-direction: column; box-sizing: border-box; z-index: 1000; }
+        .dash-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 10px; }
+        .dash-close-btn { background: none; border: none; color: #ff3b30; font-size: 18px; font-weight: bold; cursor: pointer; padding: 0; }
+        .dash-content { margin-top: 20px; flex: 1; overflow-y: auto; }
+        .widget { background-color: #111111; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #222; }
+        .widget h4 { margin: 0 0 8px 0; }
+        .widget p { color: #aaa; font-size: 14px; margin: 0; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @media (max-width: 768px) { .dashboard-panel { position: absolute; top: 0; right: 0; width: 100%; } }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <span>SARA — Boss ka AI</span>
-        <button class="wakeup-btn" onclick="wakeServer()">Server Jagao ⚡</button>
+    <div class="main-chat">
+        <div class="avatar-container" onclick="toggleInputBox()">
+            <img id="saraAvatar" src="https://unsplash.com" alt="SARA" class="avatar-img">
+            <h2 class="avatar-name">SARA</h2>
+            <div class="avatar-status">● ONLINE</div>
+        </div>
+        <div class="chat-container" id="chatContainer"></div>
+        <div class="loading-text" id="saraLoading">SARA soch rahi hai, Boss...</div>
+        <div class="input-area" id="inputDock">
+            <input type="text" id="msgInput" placeholder="SARA se kuch puchiye Boss..." onkeypress="handleKeyPress(event)">
+            <button id="sendBtn" onclick="sendMessage()">Bhejo</button>
+        </div>
     </div>
-    <div class="chat-container" id="chatContainer">
-        <div class="message sara">Pranam Boss! SARA active hai. Agar pehli baar mein error aaye, toh upar 'Server Jagao' daba kar 20 seconds wait karein!</div>
+    <div class="dashboard-panel" id="secretDashboard">
+        <div class="dash-header">
+            <h3 style="margin: 0; font-size: 18px;">Executive Dashboard</h3>
+            <button class="dash-close-btn" onclick="setDashboardView(false)">Close ✕</button>
+        </div>
+        <div class="dash-content">
+            <div class="widget">
+                <h4 style="color: #ff9800;">📊 Trading Desk Alerts</h4>
+                <div style="font-size: 13px; color: #aaa;">
+                    <p style="margin: 4px 0;">● NIFTY 24,500 — <span style="color: #4caf50;">HIT ✔</span></p>
+                    <p style="margin: 4px 0;">● BANKNIFTY 52,200 — <span style="color: #ff9800;">WATCHING...</span></p>
+                </div>
+            </div>
+            <div class="widget">
+                <h4 style="color: #2196f3;">🧠 SARA Brain Status</h4>
+                <p>Model: gemini-2.5-flash (Free Tier)</p>
+                <p style="color: #4caf50; font-size: 13px; margin-top: 5px;">Database: Async MongoDB Connected</p>
+            </div>
+            <div class="widget">
+                <h4 style="color: #e91e63;">📝 Executive Tasks</h4>
+                <p>● Morning Market Briefing (08:30 AM)</p>
+            </div>
+        </div>
     </div>
-
-    <div class="input-area">
-        <input type="text" id="msgInput" placeholder="SARA se kuch puchiye Boss..." onkeypress="handleKeyPress(event)">
-        <button id="sendBtn" onclick="sendMessage()">Bhejo</button>
-    </div>
-
     <script>
-        const BACKEND_BASE = "https://sara-backend-an88.onrender.com";
+        const BACKEND_BASE = "https://onrender.com";
         const sessionId = "boss_mobile_session";
-
-        async function wakeServer() {
-            appendMessage("Server ko jagane ki koshish kar rahi hu, rukiye...", "sara");
-            try { await fetch(BACKEND_BASE + "/"); appendMessage("Server jag gaya hai Boss! Ab message bhejiye.", "sara"); } 
-            catch (e) { appendMessage("Abhi bhi koshish jaari hai...", "sara"); }
+        const SARA_ASSETS = {
+            idle: "https://unsplash.com",
+            talking: "https://giphy.com", 
+            hair: "https://giphy.com"
+        };
+        function toggleInputBox() {
+            const dock = document.getElementById("inputDock");
+            if (dock.style.display === "flex") { dock.style.display = "none"; } 
+            else { dock.style.display = "flex"; document.getElementById("msgInput").focus(); }
         }
-
+        window.addEventListener("keydown", (e) => {
+            if (document.activeElement.tagName !== "INPUT" && e.key.toLowerCase() === "i") { toggleInputBox(); }
+        });
+        setInterval(() => {
+            const avatar = document.getElementById("saraAvatar");
+            if (Math.random() < 0.30) {
+                avatar.src = SARA_ASSETS.hair;
+                setTimeout(() => { avatar.src = SARA_ASSETS.idle; }, 4000);
+            }
+        }, 900000);
+        function setDashboardView(show) { document.getElementById("secretDashboard").style.display = show ? "flex" : "none"; }
         async function sendMessage() {
             const input = document.getElementById("msgInput");
             const btn = document.getElementById("sendBtn");
+            const loader = document.getElementById("saraLoading");
+            const avatar = document.getElementById("saraAvatar");
             const text = input.value.trim();
             if (!text) return;
-
+            if (text.toLowerCase() === 'close input box' || text.includes('input box band')) {
+                document.getElementById("inputDock").style.display = "none"; input.value = ""; return;
+            }
             appendMessage(text, "user");
-            input.value = "";
-            input.disabled = true;
-            btn.disabled = true;
-
+            input.value = ""; input.disabled = true; btn.disabled = true;
+            loader.style.display = "block"; avatar.src = SARA_ASSETS.talking;
             try {
                 const response = await fetch(BACKEND_BASE + "/chat", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ session_id: sessionId, message: text })
                 });
                 const data = await response.json();
-                if (data.response) { appendMessage(data.response, "sara"); } 
-                else { appendMessage("Jawab nahi mila Boss.", "sara"); }
-            } catch (error) {
-                appendMessage("Server gehri neend mein hai. Upar 'Server Jagao' button dabayein aur 10 sec baad fir try karein!", "sara");
-            } finally {
-                input.disabled = false;
-                btn.disabled = false;
-                input.focus();
+                if (data.response) { 
+                    const reply = data.response; appendMessage(reply, "sara"); 
+                    const lowerReply = reply.toLowerCase();
+                    if (lowerReply.includes("dashboard khol rahi hu") || lowerReply.includes("opening dashboard") || lowerReply.includes("dashboard open")) { setDashboardView(true); } 
+                    else if (lowerReply.includes("dashboard band") || lowerReply.includes("closing dashboard")) { setDashboardView(false); }
+                } else { appendMessage("Jawab nahi mila Boss.", "sara"); }
+            } catch (error) { appendMessage("Sorry Boss, dikkat aa gayi hai!", "sara");
+            } finally { input.disabled = false; btn.disabled = false; loader.style.display = "none";
+                setTimeout(() => { avatar.src = SARA_ASSETS.idle; }, 4000); input.focus();
             }
         }
-
         function appendMessage(text, sender) {
             const container = document.getElementById("chatContainer");
             const msgDiv = document.createElement("div");
-            msgDiv.className = `message ${sender}`;
-            msgDiv.innerText = text;
-            container.appendChild(msgDiv);
-            container.scrollTop = container.scrollHeight;
+            msgDiv.className = `message ${sender}`; msgDiv.innerText = text;
+            container.appendChild(msgDiv); container.scrollTop = container.scrollHeight;
         }
-
         function handleKeyPress(e) { if (e.key === "Enter") sendMessage(); }
     </script>
 </body>
