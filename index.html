@@ -1,188 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SARA - Voice Assistant</title>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SARA</title>
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: #000000; color: #ffffff; margin: 0; display: flex; flex-direction: row; height: 100vh; position: relative; overflow: hidden;
-        }
-        .main-chat { flex: 1; display: flex; flex-direction: column; padding: 20px; height: 100%; box-sizing: border-box; background-color: #000000; align-items: center; justify-content: center; }
-        .avatar-container { display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; user-select: none; }
-        .avatar-img-box { width: 220px; height: 220px; border-radius: 50%; border: 3px solid #ff9800; box-shadow: 0 0 25px rgba(255,152,0,0.2); transition: all 0.5s ease; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #000; }
-        .avatar-img-box.listening { border-color: #4caf50; box-shadow: 0 0 35px rgba(76, 175, 80, 0.6); animation: pulse 1.5s infinite; }
-        .avatar-wrapper { position: relative; width: 100%; height: 100%; }
+        body { font-family: sans-serif; background: #000; color: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        .main-chat { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .avatar-img-box { width: 220px; height: 220px; border-radius: 50%; border: 3px solid #ff9800; box-shadow: 0 0 25px rgba(255,152,0,0.2); cursor: pointer; position: relative; overflow: hidden; background: #000; }
+        .avatar-img-box.listening { border-color: #4caf50; box-shadow: 0 0 35px rgba(76,175,80,0.6); animation: p 1.5s infinite; }
         .base-face { width: 100%; height: 100%; object-fit: cover; }
-        .lip-overlay { position: absolute; top: 52%; left: 47%; width: 12%; height: 6%; background: #ffb74d; border-radius: 50%; display: none; transform: translateX(-50%); border: 2px solid #263238; }
-        .eye-overlay-left { position: absolute; top: 43%; left: 40%; width: 8%; height: 4%; background: #000; display: none; border-radius: 4px; }
-        .eye-overlay-right { position: absolute; top: 43%; left: 56%; width: 8%; height: 4%; background: #000; display: none; border-radius: 4px; }
-        .avatar-name { margin: 15px 0 0 0; font-size: 26px; font-weight: bold; letter-spacing: 1px; }
-        .avatar-status { margin: 5px 0 0 0; font-size: 13px; color: #4caf50; font-weight: 500; }
-        .status-text { color: #888; font-style: italic; font-size: 14px; margin-top: 20px; text-align: center; max-width: 80%; }
-        .dashboard-panel { width: 400px; height: 100%; border-left: 1px solid #222; background-color: #000000; padding: 20px; display: none; flex-direction: column; box-sizing: border-box; z-index: 1000; }
-        .dash-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 10px; }
-        .dash-close-btn { background: none; border: none; color: #ff3b30; font-size: 18px; font-weight: bold; cursor: pointer; padding: 0; }
-        .dash-content { margin-top: 20px; flex: 1; overflow-y: auto; }
-        .widget { background-color: #111111; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #222; }
-        .widget h4 { margin: 0 0 8px 0; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.04); } 100% { transform: scale(1); } }
+        .lip { position: absolute; top: 52%; left: 47%; width: 12%; height: 6%; background: #ffb74d; border-radius: 50%; display: none; transform: translateX(-50%); border: 2px solid #263238; }
+        .avatar-name { margin: 15px 0 0 0; font-size: 26px; font-weight: bold; }
+        .avatar-status { margin: 5px 0 0 0; font-size: 13px; color: #4caf50; }
+        .status-text { color: #888; font-style: italic; font-size: 14px; margin-top: 20px; text-align: center; }
+        .dashboard-panel { width: 400px; height: 100%; border-left: 1px solid #222; background: #000; padding: 20px; display: none; flex-direction: column; box-sizing: border-box; }
+        .widget { background: #111; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #222; }
+        @keyframes p { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
         @media (max-width: 768px) { .dashboard-panel { position: absolute; top: 0; right: 0; width: 100%; } }
     </style>
 </head>
 <body>
     <div class="main-chat">
-        <div class="avatar-container" onclick="startVoiceListening()">
-            <div id="avatarBox" class="avatar-img-box">
-                <div class="avatar-wrapper">
-                    <img id="saraBaseImg" src="https://unsplash.com" alt="SARA" class="base-face">
-                    <div id="saraLips" class="lip-overlay"></div>
-                    <div id="saraEyeL" class="eye-overlay-left"></div>
-                    <div id="saraEyeR" class="eye-overlay-right"></div>
-                </div>
-            </div>
-            <h2 class="avatar-name">SARA</h2>
-            <div class="avatar-status" id="saraLiveStatus">● ONLINE</div>
+        <div class="avatar-img-box" id="avatarBox" onclick="startVoiceListening()">
+            <img src="https://unsplash.com" class="base-face">
+            <div id="saraLips" class="lip"></div>
         </div>
-        <div class="status-text" id="voiceStatusText">Tap SARA's face to talk face-to-face...</div>
+        <h2 class="avatar-name">SARA</h2>
+        <div class="avatar-status" id="saraLiveStatus">● ONLINE</div>
+        <div class="status-text" id="voiceStatusText">Tap SARA's face to talk...</div>
     </div>
     <div class="dashboard-panel" id="secretDashboard">
-        <div class="dash-header">
-            <h3>Executive Dashboard</h3>
-            <button class="dash-close-btn" onclick="setDashboardView(false)">Close ✕</button>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid #222; padding-bottom:10px;">
+            <h3>Executive Dashboard</h3><button style="background:none; border:none; color:#ff3b30; font-size:18px; cursor:pointer;" onclick="setDashboardView(false)">Close ✕</button>
         </div>
-        <div class="dash-content">
-            <div class="widget">
-                <h4 style="color: #ff9800;">📊 Trading Desk Alerts</h4>
-                <div style="font-size: 13px; color: #aaa;">
-                    <p style="margin: 4px 0;">● NIFTY 24,500 — <span style="color: #4caf50;">HIT ✔</span></p>
-                    <p style="margin: 4px 0;">● BANKNIFTY 52,200 — <span style="color: #ff9800;">WATCHING...</span></p>
-                </div>
-            </div>
-            <div class="widget">
-                <h4 style="color: #2196f3;">🧠 SARA Brain Status</h4>
-                <p style="color: #aaa;">Model: gemini-2.5-flash (Free Tier)</p>
-                <p style="color: #4caf50; font-size: 13px; margin-top: 5px;">Database: Async MongoDB Connected</p>
-            </div>
-            <div class="widget">
-                <h4 style="color: #e91e63;">📝 Executive Tasks</h4>
-                <p style="color: #aaa;">● Morning Market Briefing (08:30 AM)</p>
-            </div>
+        <div style="margin-top:20px; flex:1; overflow-y:auto;">
+            <div class="widget"><h4 style="color:#ff9800;">📊 Trading Desk Alerts</h4><p style="font-size:13px; color:#aaa;">● NIFTY 24,500 — <span style="color:#4caf50;">HIT ✔</span></p></div>
+            <div class="widget"><h4 style="color:#2196f3;">🧠 SARA Brain</h4><p style="color:#aaa; font-size:13px;">Gemini 2.5 Flash + MongoDB Live</p></div>
         </div>
     </div>
     <script>
         const BACKEND_BASE = "https://onrender.com";
         const sessionId = "boss_mobile_session";
-
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition = null;
-        let isSpeakingOrListening = false;
+        let recognition = null, isSpeakingOrListening = false;
 
         function triggerLipSync(speak) {
-            const lips = document.getElementById("saraLips");
-            clearInterval(window.lipsInterval);
-            if (speak) {
-                lips.style.display = "block";
-                window.lipsInterval = setInterval(() => {
-                    lips.style.height = lips.style.height === "3%" ? "8%" : "3%";
-                }, 120);
-            } else {
-                lips.style.display = "none";
-            }
+            const lips = document.getElementById("saraLips"); clearInterval(window.lipsInterval);
+            if (speak) { lips.style.display = "block"; window.lipsInterval = setInterval(() => { lips.style.height = lips.style.height === "3%" ? "8%" : "3%"; }, 120); } 
+            else { lips.style.display = "none"; }
         }
-
-        setInterval(() => {
-            if (!isSpeakingOrListening) {
-                const eyeL = document.getElementById("saraEyeL");
-                const eyeR = document.getElementById("saraEyeR");
-                eyeL.style.display = "block"; eyeR.style.display = "block";
-                setTimeout(() => {
-                    eyeL.style.display = "none"; eyeR.style.display = "none";
-                }, 180);
-            }
-        }, 3500);
-
         if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.lang = 'hi-IN';
-            recognition.interimResults = false;
-
-            recognition.onstart = () => {
-                isSpeakingOrListening = true;
-                document.getElementById("avatarBox").classList.add("listening");
-                document.getElementById("saraLiveStatus").innerText = "● LISTENING";
-                document.getElementById("voiceStatusText").innerText = "Listening to you, Boss...";
-            };
-
-            recognition.onerror = (e) => { console.error(e); resetToIdleState(); };
-            recognition.onend = () => { document.getElementById("avatarBox").classList.remove("listening"); };
-            
-            recognition.onresult = async (event) => {
-                const speechToText = event.results.transcript;
-                document.getElementById("voiceStatusText").innerText = `You: "${speechToText}"`;
-                await sendVoicePayloadToBackend(speechToText);
-            };
+            recognition = new SpeechRecognition(); recognition.continuous = false; recognition.lang = 'hi-IN';
+            recognition.onstart = () => { isSpeakingOrListening = true; document.getElementById("avatarBox").classList.add("listening"); document.getElementById("saraLiveStatus").innerText = "● LISTENING"; document.getElementById("voiceStatusText").innerText = "Listening, Boss..."; };
+            recognition.onerror = () => resetToIdleState();
+            recognition.onend = () => document.getElementById("avatarBox").classList.remove("listening");
+            recognition.onresult = async (e) => { const txt = e.results[0][0].transcript; document.getElementById("voiceStatusText").innerText = `You: "${txt}"`; await sendPayload(txt); };
         }
-
-        function startVoiceListening() {
-            if (recognition && !isSpeakingOrListening) {
-                window.speechSynthesis.cancel();
-                recognition.start();
-            }
-        }
-
-        function resetToIdleState() {
-            isSpeakingOrListening = false;
-            triggerLipSync(false);
-            document.getElementById("saraLiveStatus").innerText = "● ONLINE";
-            document.getElementById("voiceStatusText").innerText = "Tap SARA's face to talk again...";
-        }
-
+        function startVoiceListening() { if (recognition && !isSpeakingOrListening) { window.speechSynthesis.cancel(); recognition.start(); } }
+        function resetToIdleState() { isSpeakingOrListening = false; triggerLipSync(false); document.getElementById("saraLiveStatus").innerText = "● ONLINE"; document.getElementById("voiceStatusText").innerText = "Tap SARA's face to talk again..."; }
         function setDashboardView(show) { document.getElementById("secretDashboard").style.display = show ? "flex" : "none"; }
-
-        async function sendVoicePayloadToBackend(text) {
-            const statusText = document.getElementById("voiceStatusText");
-            document.getElementById("saraLiveStatus").innerText = "● THINKING";
-            statusText.innerText = "SARA soch rahi hai...";
-
+        async function sendPayload(text) {
+            const st = document.getElementById("voiceStatusText"); document.getElementById("saraLiveStatus").innerText = "● THINKING"; st.innerText = "SARA soch rahi hai...";
             try {
-                const response = await fetch(BACKEND_BASE + "/chat", {
-                    method: "POST", 
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ session_id: sessionId, message: text })
-                });
-                const data = await response.json();
-                
-                if (data.response) { 
-                    const reply = data.response;
-                    statusText.innerText = `SARA: "${reply}"`;
-                    
-                    const lowerReply = reply.toLowerCase();
-                    if (lowerReply.includes("dashboard khol rahi hu") || lowerReply.includes("opening dashboard") || lowerReply.includes("dashboard open")) { setDashboardView(true); } 
-                    else if (lowerReply.includes("dashboard band") || lowerReply.includes("closing dashboard")) { setDashboardView(false); }
-                    
-                    speakResponse(reply);
-                } else { speakResponse("Boss, mujhe aapka jawab nahi mila."); }
-            } catch (error) {
-                speakResponse("Sorry Boss, lagta hai network dikkat de raha hai!");
-            }
+                const r = await fetch(BACKEND_BASE + "/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, message: text }) });
+                const d = await r.json();
+                if (d.response) { 
+                    st.innerText = `SARA: "${d.response}"`; const low = d.response.toLowerCase();
+                    if (low.includes("dashboard khol") || low.includes("opening dashboard")) setDashboardView(true);
+                    if (low.includes("dashboard band") || low.includes("closing dashboard")) setDashboardView(false);
+                    speak(d.response);
+                } else { speak("Boss, mujhe aapka jawab nahi mila."); }
+            } catch (error) { speak("Sorry Boss, lagta hai network dikkat de raha hai!"); }
         }
-
-        function speakResponse(text) {
+        function speak(t) {
             if ('speechSynthesis' in window) {
-                const SpeechSynthesisUtterance = window.SpeechSynthesisUtterance;
-                const finalUtterance = new SpeechSynthesisUtterance(text);
-                finalUtterance.lang = 'hi-IN'; finalUtterance.rate = 1.0; finalUtterance.pitch = 1.1;
-                
-                finalUtterance.onstart = () => {
-                    triggerLipSync(true);
-                    document.getElementById("saraLiveStatus").innerText = "● SPEAKING";
-                };
-
-                finalUtterance.onend = () => { resetToIdleState(); };
-                window.speechSynthesis.speak(finalUtterance);
+                const u = new SpeechSynthesisUtterance(t); u.lang = 'hi-IN';
+                u.onstart = () => { triggerLipSync(true); document.getElementById("saraLiveStatus").innerText = "● SPEAKING"; };
+                u.onend = () => resetToIdleState(); window.speechSynthesis.speak(u);
             } else { resetToIdleState(); }
         }
     </script>
