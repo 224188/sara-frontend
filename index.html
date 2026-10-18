@@ -38,12 +38,12 @@
         </div>
     </div>
     <script>
-        // Connected to your verified live Render endpoint
         const BACKEND_BASE = "https://sara-backend-an88.onrender.com";
         const sessionId = "boss_mobile_session";
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null, isSpeakingOrListening = false;
 
+        // Visual lip sync engine layout manipulation
         function triggerLipSync(speak) {
             const lips = document.getElementById("saraLips"); clearInterval(window.lipsInterval);
             if (speak) { lips.style.display = "block"; window.lipsInterval = setInterval(() => { lips.style.height = lips.style.height === "3%" ? "8%" : "3%"; }, 120); } 
@@ -64,6 +64,11 @@
             const st = document.getElementById("voiceStatusText"); 
             document.getElementById("saraLiveStatus").innerText = "● THINKING"; 
             st.innerText = "SARA soch rahi hai...";
+            
+            // Setting up a generous 45-second timeout controller for Free Tier servers
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
+
             try {
                 const r = await fetch(`${BACKEND_BASE}/chat`, { 
                     method: "POST", 
@@ -71,8 +76,10 @@
                         "Accept": "application/json",
                         "Content-Type": "application/json" 
                     }, 
-                    body: JSON.stringify({ "session_id": sessionId, "message": String(text) }) 
+                    body: JSON.stringify({ "session_id": sessionId, "message": String(text) }),
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
                 const d = await r.json();
                 if (d.response) { 
                     st.innerText = `SARA: "${d.response}"`; const low = d.response.toLowerCase();
@@ -81,8 +88,9 @@
                     speak(d.response);
                 } else { speak("Boss, mujhe aapka jawab nahi mila."); }
             } catch (error) { 
+                clearTimeout(timeoutId);
                 console.error("Network Link Error:", error);
-                speak("Sorry Boss, lagta hai network dikkat de raha hai!"); 
+                speak("Sorry Boss, lagta hai free tier server thoda time le raha hai, ek baar aur boliye!"); 
             }
         }
         function speak(t) {
