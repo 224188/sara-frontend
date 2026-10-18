@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SARA</title>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SARA AI</title>
     <style>
         body { font-family: sans-serif; background: #000; color: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         .main-chat { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
@@ -11,7 +11,7 @@
         .lip { position: absolute; top: 52%; left: 47%; width: 12%; height: 6%; background: #ffb74d; border-radius: 50%; display: none; transform: translateX(-50%); border: 2px solid #263238; }
         .avatar-name { margin: 15px 0 0 0; font-size: 26px; font-weight: bold; }
         .avatar-status { margin: 5px 0 0 0; font-size: 13px; color: #4caf50; }
-        .status-text { color: #888; font-style: italic; font-size: 14px; margin-top: 20px; text-align: center; }
+        .status-text { color: #888; font-style: italic; font-size: 14px; margin-top: 20px; text-align: center; max-width: 80%; }
         .dashboard-panel { width: 400px; height: 100%; border-left: 1px solid #222; background: #000; padding: 20px; display: none; flex-direction: column; box-sizing: border-box; }
         .widget { background: #111; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #222; }
         @keyframes p { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
@@ -34,11 +34,12 @@
         </div>
         <div style="margin-top:20px; flex:1; overflow-y:auto;">
             <div class="widget"><h4 style="color:#ff9800;">📊 Trading Desk Alerts</h4><p style="font-size:13px; color:#aaa;">● NIFTY 24,500 — <span style="color:#4caf50;">HIT ✔</span></p></div>
-            <div class="widget"><h4 style="color:#2196f3;">🧠 SARA Brain</h4><p style="color:#aaa; font-size:13px;">Gemini 2.5 Flash + MongoDB Live</p></div>
+            <div class="widget"><h4 style="color:#2196f3;">🧠 SARA Brain</h4><p style="color:#aaa; font-size:13px;">Gemini 2.5 Flash Live</p></div>
         </div>
     </div>
     <script>
-        const BACKEND_BASE = "https://onrender.com";
+        // Connected to your verified live Render endpoint
+        const BACKEND_BASE = "https://sara-backend-an88.onrender.com";
         const sessionId = "boss_mobile_session";
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null, isSpeakingOrListening = false;
@@ -53,23 +54,36 @@
             recognition.onstart = () => { isSpeakingOrListening = true; document.getElementById("avatarBox").classList.add("listening"); document.getElementById("saraLiveStatus").innerText = "● LISTENING"; document.getElementById("voiceStatusText").innerText = "Listening, Boss..."; };
             recognition.onerror = () => resetToIdleState();
             recognition.onend = () => document.getElementById("avatarBox").classList.remove("listening");
-            recognition.onresult = async (e) => { const txt = e.results[0][0].transcript; document.getElementById("voiceStatusText").innerText = `You: "${txt}"`; await sendPayload(txt); };
+            recognition.onresult = async (e) => { const txt = e.results.transcript; document.getElementById("voiceStatusText").innerText = `You: "${txt}"`; await sendPayload(txt); };
         }
         function startVoiceListening() { if (recognition && !isSpeakingOrListening) { window.speechSynthesis.cancel(); recognition.start(); } }
         function resetToIdleState() { isSpeakingOrListening = false; triggerLipSync(false); document.getElementById("saraLiveStatus").innerText = "● ONLINE"; document.getElementById("voiceStatusText").innerText = "Tap SARA's face to talk again..."; }
         function setDashboardView(show) { document.getElementById("secretDashboard").style.display = show ? "flex" : "none"; }
+        
         async function sendPayload(text) {
-            const st = document.getElementById("voiceStatusText"); document.getElementById("saraLiveStatus").innerText = "● THINKING"; st.innerText = "SARA soch rahi hai...";
+            const st = document.getElementById("voiceStatusText"); 
+            document.getElementById("saraLiveStatus").innerText = "● THINKING"; 
+            st.innerText = "SARA soch rahi hai...";
             try {
-                const r = await fetch(BACKEND_BASE + "/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, message: text }) });
+                const r = await fetch(`${BACKEND_BASE}/chat`, { 
+                    method: "POST", 
+                    headers: { 
+                        "Accept": "application/json",
+                        "Content-Type": "application/json" 
+                    }, 
+                    body: JSON.stringify({ "session_id": sessionId, "message": String(text) }) 
+                });
                 const d = await r.json();
                 if (d.response) { 
                     st.innerText = `SARA: "${d.response}"`; const low = d.response.toLowerCase();
-                    if (low.includes("dashboard khol") || low.includes("opening dashboard")) setDashboardView(true);
-                    if (low.includes("dashboard band") || low.includes("closing dashboard")) setDashboardView(false);
+                    if (low.includes("dashboard khol") || low.includes("opening dashboard") || low.includes("dashboard khol rahi hu")) setDashboardView(true);
+                    if (low.includes("dashboard band") || low.includes("closing dashboard") || low.includes("dashboard band kar rahi hu")) setDashboardView(false);
                     speak(d.response);
                 } else { speak("Boss, mujhe aapka jawab nahi mila."); }
-            } catch (error) { speak("Sorry Boss, lagta hai network dikkat de raha hai!"); }
+            } catch (error) { 
+                console.error("Network Link Error:", error);
+                speak("Sorry Boss, lagta hai network dikkat de raha hai!"); 
+            }
         }
         function speak(t) {
             if ('speechSynthesis' in window) {
