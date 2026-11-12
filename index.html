@@ -19,6 +19,7 @@
     </style>
 </head>
 <body>
+    <a href="./plugin-hub.html" style="position:fixed;top:14px;right:14px;z-index:20;padding:10px 14px;border:1px solid #665238;border-radius:12px;background:#211b15;color:#ffcc80;text-decoration:none;font-size:13px;">Plugin Hub ↗</a>
     <div class="main-chat">
         <div class="avatar-img-box" id="avatarBox" onclick="startVoiceListening()">
             <img src="https://unsplash.com" class="base-face">
@@ -54,7 +55,7 @@
             recognition.onstart = () => { isSpeakingOrListening = true; document.getElementById("avatarBox").classList.add("listening"); document.getElementById("saraLiveStatus").innerText = "● LISTENING"; document.getElementById("voiceStatusText").innerText = "Listening, Boss..."; };
             recognition.onerror = () => resetToIdleState();
             recognition.onend = () => document.getElementById("avatarBox").classList.remove("listening");
-            recognition.onresult = async (e) => { const txt = e.results.transcript; document.getElementById("voiceStatusText").innerText = `You: "${txt}"`; await sendPayload(txt); };
+            recognition.onresult = async (e) => { const txt = e.results[0][0].transcript; document.getElementById("voiceStatusText").innerText = `You: "${txt}"`; await sendPayload(txt); };
         }
         function startVoiceListening() { if (recognition && !isSpeakingOrListening) { window.speechSynthesis.cancel(); recognition.start(); } }
         function resetToIdleState() { isSpeakingOrListening = false; triggerLipSync(false); document.getElementById("saraLiveStatus").innerText = "● ONLINE"; document.getElementById("voiceStatusText").innerText = "Tap SARA's face to talk again..."; }
@@ -80,13 +81,24 @@
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
-                const d = await r.json();
+                let d = {};
+                try { d = await r.json(); } catch (_) { d = {}; }
+                if (!r.ok) {
+                    const detail = typeof d.detail === "string" ? d.detail : `Server error (HTTP ${r.status})`;
+                    st.innerText = `SARA error: ${detail}`;
+                    document.getElementById("saraLiveStatus").innerText = "● ERROR";
+                    speak("Boss, SARA ke server se reply nahi aaya. Screen par error detail check kijiye.");
+                    return;
+                }
                 if (d.response) { 
                     st.innerText = `SARA: "${d.response}"`; const low = d.response.toLowerCase();
                     if (low.includes("dashboard khol") || low.includes("opening dashboard") || low.includes("dashboard khol rahi hu")) setDashboardView(true);
                     if (low.includes("dashboard band") || low.includes("closing dashboard") || low.includes("dashboard band kar rahi hu")) setDashboardView(false);
                     speak(d.response);
-                } else { speak("Boss, mujhe aapka jawab nahi mila."); }
+                } else {
+                    st.innerText = "SARA error: Server ne empty reply diya.";
+                    speak("Boss, mujhe aapka jawab nahi mila.");
+                }
             } catch (error) { 
                 clearTimeout(timeoutId);
                 console.error("Network Link Error:", error);
