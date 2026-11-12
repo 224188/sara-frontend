@@ -62,6 +62,7 @@
         let recognitionRestartTimer = null;
         let processingVoiceCommand = false;
         let lastVoiceTranscript = "";
+        let lastVoiceTranscriptAt = 0;
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.continuous = true;
@@ -92,8 +93,12 @@
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     if (!event.results[i].isFinal) continue;
                     const txt = event.results[i][0].transcript.trim();
-                    if (!txt || txt === lastVoiceTranscript || processingVoiceCommand) continue;
+                    const now = Date.now();
+                    // Ignore only immediate duplicate recognition events. Boss must be
+                    // able to repeat the same command later in the conversation.
+                    if (!txt || (txt === lastVoiceTranscript && now - lastVoiceTranscriptAt < 1800) || processingVoiceCommand) continue;
                     lastVoiceTranscript = txt;
+                    lastVoiceTranscriptAt = now;
                     await handleVoiceCommand(txt);
                 }
             };
