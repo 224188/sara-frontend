@@ -81,13 +81,24 @@
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
-                const d = await r.json();
+                let d = {};
+                try { d = await r.json(); } catch (_) { d = {}; }
+                if (!r.ok) {
+                    const detail = typeof d.detail === "string" ? d.detail : `Server error (HTTP ${r.status})`;
+                    st.innerText = `SARA error: ${detail}`;
+                    document.getElementById("saraLiveStatus").innerText = "● ERROR";
+                    speak("Boss, SARA ke server se reply nahi aaya. Screen par error detail check kijiye.");
+                    return;
+                }
                 if (d.response) { 
                     st.innerText = `SARA: "${d.response}"`; const low = d.response.toLowerCase();
                     if (low.includes("dashboard khol") || low.includes("opening dashboard") || low.includes("dashboard khol rahi hu")) setDashboardView(true);
                     if (low.includes("dashboard band") || low.includes("closing dashboard") || low.includes("dashboard band kar rahi hu")) setDashboardView(false);
                     speak(d.response);
-                } else { speak("Boss, mujhe aapka jawab nahi mila."); }
+                } else {
+                    st.innerText = "SARA error: Server ne empty reply diya.";
+                    speak("Boss, mujhe aapka jawab nahi mila.");
+                }
             } catch (error) { 
                 clearTimeout(timeoutId);
                 console.error("Network Link Error:", error);
