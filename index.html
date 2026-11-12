@@ -35,7 +35,9 @@
             <h3>Executive Dashboard</h3><button style="background:none; border:none; color:#ff3b30; font-size:18px; cursor:pointer;" onclick="setDashboardView(false)">Close ✕</button>
         </div>
         <div style="margin-top:20px; flex:1; overflow-y:auto;">
-            <div class="widget"><h4 style="color:#2196f3;">🧠 SARA Brain</h4><p style="color:#aaa; font-size:13px;">Gemini 2.5 Flash</p></div>
+            <div class="widget"><h4 style="color:#2196f3;">🧠 SARA Brain</h4><p id="brainHealth" style="color:#aaa; font-size:13px;">Checking Gemini backend...</p></div>
+            <div class="widget"><h4 style="color:#f4bd68;">🔌 Plugin Hub</h4><p id="pluginHealth" style="color:#aaa; font-size:13px;">Checking available integrations...</p><button onclick="window.location.href='./plugin-hub.html'" style="padding:9px 12px;border-radius:9px;background:#1b2639;color:#dbe5ff;border:1px solid #35425a;">Open Plugin Hub</button></div>
+            <div class="widget"><h4 style="color:#75e0c0;">🛡️ Privacy & Approval</h4><p style="color:#aaa;font-size:13px;">External actions require Boss approval. No automatic paid AI fallback.</p></div>
         </div>
     </div>
     <section id="chatbotPanel" style="display:none;position:fixed;inset:0;z-index:30;background:#080b14;color:#fff;padding:20px;box-sizing:border-box;flex-direction:column;">
@@ -134,7 +136,7 @@
         function setDashboardView(show) { document.getElementById("secretDashboard").style.display = show ? "flex" : "none"; if(show) closeChatbot(); }
         function openChatbot() { document.getElementById("secretDashboard").style.display = "none"; document.getElementById("chatbotPanel").style.display = "flex"; }
         function closeChatbot() { document.getElementById("chatbotPanel").style.display = "none"; }
-        document.getElementById("chatForm").addEventListener("submit", async (event) => { event.preventDefault(); const input=document.getElementById("chatInput"); const msg=input.value.trim(); if(!msg)return; const box=document.getElementById("chatMessages"); box.innerHTML += "<p><b>Boss:</b> "+escapeChat(msg)+"</p><p><b>SARA:</b> Soch rahi hu...</p>"; input.value=""; await sendPayload(msg); });
+        document.getElementById("chatForm").addEventListener("submit", async (event) => { event.preventDefault(); const input=document.getElementById("chatInput"); const msg=input.value.trim(); if(!msg)return; const box=document.getElementById("chatMessages"); box.innerHTML += "<p><b>Boss:</b> "+escapeChat(msg)+"</p><p id='chatPending'><b>SARA:</b> Soch rahi hu...</p>"; input.value=""; await sendPayload(msg); });
         function escapeChat(value) { const el=document.createElement("div"); el.textContent=value; return el.innerHTML; }
         
         async function sendPayload(text) {
@@ -167,7 +169,7 @@
                     return;
                 }
                 if (d.response) { 
-                    if (document.getElementById("chatbotPanel").style.display === "flex") { const box=document.getElementById("chatMessages"); box.innerHTML += "<p><b>SARA:</b> "+escapeChat(d.response)+"</p>"; box.scrollTop=box.scrollHeight; }
+                    if (document.getElementById("chatbotPanel").style.display === "flex") { const box=document.getElementById("chatMessages"); const pending=document.getElementById("chatPending"); if(pending){pending.innerHTML="<b>SARA:</b> "+escapeChat(d.response);pending.removeAttribute("id");}else{box.innerHTML += "<p><b>SARA:</b> "+escapeChat(d.response)+"</p>";} box.scrollTop=box.scrollHeight; }
                     st.innerText = `SARA: "${d.response}"`; const low = d.response.toLowerCase();
                     if (low.includes("dashboard khol") || low.includes("opening dashboard") || low.includes("dashboard khol rahi hu")) setDashboardView(true);
                     if (low.includes("dashboard band") || low.includes("closing dashboard") || low.includes("dashboard band kar rahi hu")) setDashboardView(false);
@@ -201,6 +203,29 @@
                 window.speechSynthesis.speak(u);
             } else { resetToIdleState(); }
         }
+        async function refreshDashboardHealth() {
+            const brain = document.getElementById("brainHealth");
+            const plugins = document.getElementById("pluginHealth");
+            try {
+                const response = await fetch(BACKEND_BASE + "/", { headers: { Accept: "application/json" } });
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                const data = await response.json();
+                brain.textContent = "Backend: " + data.status + " • AI: " + data.ai_brain + " • Model: " + (data.model || "unknown") + " • Database: " + (data.database || "unknown");
+            } catch (error) {
+                brain.textContent = "Backend status unavailable. Open SARA chat to see connection diagnostics.";
+            }
+            try {
+                const response = await fetch(BACKEND_BASE + "/plugins/catalog", { headers: { Accept: "application/json" } });
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                const data = await response.json();
+                const count = Array.isArray(data.plugins) ? data.plugins.length : 0;
+                plugins.textContent = count + " integrations listed. Provider connections are still being built; catalogue entries are not live connections.";
+            } catch (error) {
+                plugins.textContent = "Plugin catalogue unavailable right now.";
+            }
+        }
+        refreshDashboardHealth();
+
         // Attempt hands-free startup when the page opens. Android/Chrome may still
         // require Boss to grant the browser microphone permission once.
         window.addEventListener("load", () => {
