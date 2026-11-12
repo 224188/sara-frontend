@@ -51,11 +51,11 @@
             else { lips.style.display = "none"; }
         }
         if (SpeechRecognition) {
-            recognition = new SpeechRecognition(); recognition.continuous = false; recognition.lang = 'hi-IN';
+            recognition = new SpeechRecognition(); recognition.continuous = true; recognition.interimResults = false; recognition.lang = 'hi-IN';
             recognition.onstart = () => { isSpeakingOrListening = true; document.getElementById("avatarBox").classList.add("listening"); document.getElementById("saraLiveStatus").innerText = "● LISTENING"; document.getElementById("voiceStatusText").innerText = "Listening, Boss..."; };
             recognition.onerror = () => resetToIdleState();
-            recognition.onend = () => document.getElementById("avatarBox").classList.remove("listening");
-            recognition.onresult = async (e) => { const txt = e.results[0][0].transcript; document.getElementById("voiceStatusText").innerText = `You: "${txt}"`; await sendPayload(txt); };
+            recognition.onend = () => { document.getElementById("avatarBox").classList.remove("listening"); if (!window.speechSynthesis.speaking) setTimeout(() => { try { recognition.start(); } catch (_) {} }, 800); };
+            recognition.onresult = async (e) => { const txt = e.results[e.results.length - 1][0].transcript.trim(); document.getElementById("voiceStatusText").innerText = `You: "${txt}"`; const q = txt.toLowerCase(); if (q.includes("open dashboard") || q.includes("dashboard kholo") || q.includes("dashboard khol")) { setDashboardView(true); speak("Dashboard khol rahi hu, Boss!"); return; } if (q.includes("close dashboard") || q.includes("dashboard band")) { setDashboardView(false); speak("Dashboard band kar rahi hu, Boss!"); return; } if (q.includes("open chatbot") || q.includes("chatbot kholo")) { speak("Boss, chatbot screen abhi development mein hai."); return; } await sendPayload(txt); };
         }
         function startVoiceListening() { if (recognition && !isSpeakingOrListening) { window.speechSynthesis.cancel(); recognition.start(); } }
         function resetToIdleState() { isSpeakingOrListening = false; triggerLipSync(false); document.getElementById("saraLiveStatus").innerText = "● ONLINE"; document.getElementById("voiceStatusText").innerText = "Tap SARA's face to talk again..."; }
