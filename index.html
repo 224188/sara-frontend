@@ -99,10 +99,17 @@
                     st.innerText = "SARA error: Server ne empty reply diya.";
                     speak("Boss, mujhe aapka jawab nahi mila.");
                 }
-            } catch (error) { 
+            } catch (error) {
                 clearTimeout(timeoutId);
                 console.error("Network Link Error:", error);
-                speak("Sorry Boss, lagta hai free tier server thoda time le raha hai, ek baar aur boliye!"); 
+                const timedOut = error && error.name === "AbortError";
+                st.innerText = timedOut
+                    ? "SARA error: 45-second request timeout. Backend/Gemini ne time par reply nahi diya."
+                    : "SARA error: Backend se connection nahi ho paya. Network ya server check karein.";
+                document.getElementById("saraLiveStatus").innerText = "● ERROR";
+                speak(timedOut
+                    ? "Boss, SARA ke server se 45 seconds mein jawab nahi aaya. Backend logs check karne honge."
+                    : "Boss, SARA ka backend connect nahi ho paaya. Screen par error detail dekhiye.");
             }
         }
         function speak(t) {
