@@ -4,7 +4,9 @@
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SARA AI</title>
     <style>
         body { font-family: sans-serif; background: #000; color: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        .main-chat { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .main-chat { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; background: radial-gradient(ellipse at center, #10172b 0%, #05070d 58%, #000 100%); }
+        .avatar-name, .avatar-status, .status-text { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+        .avatar-img-box { width: min(72vw, 52vh); height: min(72vw, 52vh); max-width: 340px; max-height: 340px; border-radius: 50%; border: 2px solid rgba(142,160,255,.8); box-shadow: 0 0 35px rgba(91,117,255,.28), inset 0 0 24px rgba(91,117,255,.12); }
         .avatar-img-box { width: 220px; height: 220px; border-radius: 50%; border: 3px solid #ff9800; box-shadow: 0 0 25px rgba(255,152,0,0.2); cursor: pointer; position: relative; overflow: hidden; background: #000; }
         .avatar-img-box.listening { border-color: #4caf50; box-shadow: 0 0 35px rgba(76,175,80,0.6); animation: p 1.5s infinite; }
         .base-face { width: 100%; height: 100%; object-fit: cover; }
@@ -19,7 +21,6 @@
     </style>
 </head>
 <body>
-    <a href="./plugin-hub.html" style="position:fixed;top:14px;right:14px;z-index:20;padding:10px 14px;border:1px solid #665238;border-radius:12px;background:#211b15;color:#ffcc80;text-decoration:none;font-size:13px;">Plugin Hub ↗</a>
     <div class="main-chat">
         <div class="avatar-img-box" id="avatarBox" onclick="startVoiceListening()">
             <img src="https://unsplash.com" class="base-face">
@@ -34,8 +35,7 @@
             <h3>Executive Dashboard</h3><button style="background:none; border:none; color:#ff3b30; font-size:18px; cursor:pointer;" onclick="setDashboardView(false)">Close ✕</button>
         </div>
         <div style="margin-top:20px; flex:1; overflow-y:auto;">
-            <div class="widget"><h4 style="color:#ff9800;">📊 Trading Desk Alerts</h4><p style="font-size:13px; color:#aaa;">● NIFTY 24,500 — <span style="color:#4caf50;">HIT ✔</span></p></div>
-            <div class="widget"><h4 style="color:#2196f3;">🧠 SARA Brain</h4><p style="color:#aaa; font-size:13px;">Gemini 2.5 Flash Live</p></div>
+            <div class="widget"><h4 style="color:#2196f3;">🧠 SARA Brain</h4><p style="color:#aaa; font-size:13px;">Gemini 2.5 Flash</p></div>
         </div>
     </div>
     <section id="chatbotPanel" style="display:none;position:fixed;inset:0;z-index:30;background:#080b14;color:#fff;padding:20px;box-sizing:border-box;flex-direction:column;">
