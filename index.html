@@ -55,15 +55,82 @@
             if (speak) { lips.style.display = "block"; window.lipsInterval = setInterval(() => { lips.style.height = lips.style.height === "3%" ? "8%" : "3%"; }, 120); } 
             else { lips.style.display = "none"; }
         }
+        let shouldListen = true;
+        let recognitionRunning = false;
+        let recognitionRestartTimer = null;
+        let processingVoiceCommand = false;
+        let lastVoiceTranscript = "";
         if (SpeechRecognition) {
-            recognition = new SpeechRecognition(); recognition.continuous = true; recognition.interimResults = false; recognition.lang = 'hi-IN';
-            recognition.onstart = () => { isSpeakingOrListening = true; document.getElementById("avatarBox").classList.add("listening"); document.getElementById("saraLiveStatus").innerText = "● LISTENING"; document.getElementById("voiceStatusText").innerText = "Listening, Boss..."; };
-            recognition.onerror = () => resetToIdleState();
-            recognition.onend = () => { document.getElementById("avatarBox").classList.remove("listening"); if (!window.speechSynthesis.speaking) setTimeout(() => { try { recognition.start(); } catch (_) {} }, 800); };
-            recognition.onresult = async (e) => { const txt = e.results[e.results.length - 1][0].transcript.trim(); document.getElementById("voiceStatusText").innerText = `You: "${txt}"`; const q = txt.toLowerCase(); if (q.includes("open dashboard") || q.includes("dashboard kholo") || q.includes("dashboard khol")) { setDashboardView(true); speak("Dashboard khol rahi hu, Boss!"); return; } if (q.includes("open chatbot") || q.includes("chatbot kholo") || q.includes("chat bot kholo")) { openChatbot(); speak("Chatbot khol rahi hu, Boss!"); return; } if (q.includes("close chatbot") || q.includes("chatbot band") || q.includes("go home")) { closeChatbot(); setDashboardView(false); speak("Main screen par aa gaye, Boss."); return; } if (q.includes("close dashboard") || q.includes("dashboard band")) { setDashboardView(false); speak("Dashboard band kar rahi hu, Boss!"); return; } if (q.includes("open chatbot") || q.includes("chatbot kholo")) { speak("Boss, chatbot screen abhi development mein hai."); return; } await sendPayload(txt); };
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = "hi-IN";
+            recognition.onstart = () => {
+                recognitionRunning = true;
+                isSpeakingOrListening = true;
+                document.getElementById("avatarBox").classList.add("listening");
+                document.getElementById("saraLiveStatus").innerText = "● LISTENING";
+                document.getElementById("voiceStatusText").innerText = "Listening, Boss...";
+            };
+            recognition.onerror = (event) => {
+                recognitionRunning = false;
+                document.getElementById("avatarBox").classList.remove("listening");
+                if (event.error === "not-allowed" || event.error === "service-not-allowed" || event.error === "audio-capture") {
+                    shouldListen = false;
+                    document.getElementById("saraLiveStatus").innerText = "● MIC PERMISSION";
+                    document.getElementById("voiceStatusText").innerText = "Microphone permission allow kijiye, Boss.";
+                }
+            };
+            recognition.onend = () => {
+                recognitionRunning = false;
+                document.getElementById("avatarBox").classList.remove("listening");
+                if (shouldListen && !processingVoiceCommand && !window.speechSynthesis.speaking) scheduleListeningRestart();
+            };
+            recognition.onresult = async (event) => {
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (!event.results[i].isFinal) continue;
+                    const txt = event.results[i][0].transcript.trim();
+                    if (!txt || txt === lastVoiceTranscript || processingVoiceCommand) continue;
+                    lastVoiceTranscript = txt;
+                    await handleVoiceCommand(txt);
+                }
+            };
         }
-        function startVoiceListening() { if (recognition && !isSpeakingOrListening) { window.speechSynthesis.cancel(); recognition.start(); } }
-        function resetToIdleState() { isSpeakingOrListening = false; triggerLipSync(false); document.getElementById("saraLiveStatus").innerText = "● ONLINE"; document.getElementById("voiceStatusText").innerText = "Tap SARA's face to talk again..."; }
+        function scheduleListeningRestart() {
+            clearTimeout(recognitionRestartTimer);
+            recognitionRestartTimer = setTimeout(() => {
+                if (!recognition || !shouldListen || recognitionRunning || processingVoiceCommand || window.speechSynthesis.speaking) return;
+                try { recognition.start(); } catch (_) {}
+            }, 900);
+        }
+        function startVoiceListening() {
+            if (!recognition) {
+                document.getElementById("saraLiveStatus").innerText = "● VOICE UNAVAILABLE";
+                document.getElementById("voiceStatusText").innerText = "Is browser mein voice recognition support nahi hai.";
+                return;
+            }
+            shouldListen = true;
+            if (!recognitionRunning) { try { recognition.start(); } catch (_) {} }
+        }
+        async function handleVoiceCommand(txt) {
+            const q = txt.toLowerCase();
+            document.getElementById("voiceStatusText").innerText = `You: "${txt}"`;
+            if (q.includes("open dashboard") || q.includes("dashboard kholo") || q.includes("dashboard khol")) { setDashboardView(true); speak("Dashboard khol rahi hu, Boss!"); return; }
+            if (q.includes("open chatbot") || q.includes("open chat bot") || q.includes("chatbot kholo") || q.includes("chat bot kholo")) { openChatbot(); speak("Chatbot khol rahi hu, Boss!"); return; }
+            if (q.includes("close chatbot") || q.includes("chatbot band") || q.includes("chat bot band") || q.includes("go home")) { closeChatbot(); setDashboardView(false); speak("Main screen par aa gaye, Boss."); return; }
+            if (q.includes("close dashboard") || q.includes("dashboard band")) { setDashboardView(false); speak("Dashboard band kar rahi hu, Boss!"); return; }
+            if (q.includes("open plugin hub") || q.includes("plugin hub kholo")) { window.location.href = "./plugin-hub.html"; return; }
+            processingVoiceCommand = true;
+            try { await sendPayload(txt); }
+            finally { processingVoiceCommand = false; scheduleListeningRestart(); }
+        }
+        function resetToIdleState() {
+            isSpeakingOrListening = false;
+            triggerLipSync(false);
+            document.getElementById("saraLiveStatus").innerText = "● ONLINE";
+            if (shouldListen) document.getElementById("voiceStatusText").innerText = "Listening for your command, Boss...";
+            scheduleListeningRestart();
+        }
         function setDashboardView(show) { document.getElementById("secretDashboard").style.display = show ? "flex" : "none"; if(show) closeChatbot(); }
         function openChatbot() { document.getElementById("secretDashboard").style.display = "none"; document.getElementById("chatbotPanel").style.display = "flex"; }
         function closeChatbot() { document.getElementById("chatbotPanel").style.display = "none"; }
@@ -123,12 +190,27 @@
             }
         }
         function speak(t) {
-            if ('speechSynthesis' in window) {
-                const u = new SpeechSynthesisUtterance(t); u.lang = 'hi-IN';
+            if ("speechSynthesis" in window) {
+                if (recognition && recognitionRunning) { try { recognition.stop(); } catch (_) {} }
+                const u = new SpeechSynthesisUtterance(t);
+                u.lang = "hi-IN";
                 u.onstart = () => { triggerLipSync(true); document.getElementById("saraLiveStatus").innerText = "● SPEAKING"; };
-                u.onend = () => resetToIdleState(); window.speechSynthesis.speak(u);
+                u.onend = () => resetToIdleState();
+                u.onerror = () => resetToIdleState();
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(u);
             } else { resetToIdleState(); }
         }
+        // Attempt hands-free startup when the page opens. Android/Chrome may still
+        // require Boss to grant the browser microphone permission once.
+        window.addEventListener("load", () => {
+            if (SpeechRecognition) {
+                document.getElementById("voiceStatusText").innerText = "Starting voice assistant...";
+                startVoiceListening();
+            } else {
+                document.getElementById("voiceStatusText").innerText = "Voice recognition is not supported in this browser.";
+            }
+        });
     </script>
 </body>
 </html>
