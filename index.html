@@ -38,6 +38,11 @@
             <div class="widget"><h4 style="color:#2196f3;">🧠 SARA Brain</h4><p style="color:#aaa; font-size:13px;">Gemini 2.5 Flash Live</p></div>
         </div>
     </div>
+    <section id="chatbotPanel" style="display:none;position:fixed;inset:0;z-index:30;background:#080b14;color:#fff;padding:20px;box-sizing:border-box;flex-direction:column;">
+      <header style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #263044;padding-bottom:12px;"><h2 style="margin:0;color:#b9c8ff;">SARA Chatbot</h2><button onclick="closeChatbot()" style="padding:10px 14px;border-radius:10px;">Close ✕</button></header>
+      <div id="chatMessages" style="flex:1;overflow:auto;padding:16px 2px;line-height:1.6;">Namaste Boss! Main SARA hoon. Aap yahan mujhse chat kar sakte hain.</div>
+      <form id="chatForm" style="display:flex;gap:8px;"><input id="chatInput" placeholder="Message likhiye, Boss..." autocomplete="off" style="flex:1;min-width:0;padding:13px;border-radius:10px;background:#151c2b;color:white;border:1px solid #39445a;"><button type="submit" style="padding:12px 16px;border:0;border-radius:10px;background:#687ff5;color:white;">Send</button></form>
+    </section>
     <script>
         const BACKEND_BASE = "https://sara-backend-an88.onrender.com";
         const sessionId = "boss_mobile_session";
@@ -55,11 +60,15 @@
             recognition.onstart = () => { isSpeakingOrListening = true; document.getElementById("avatarBox").classList.add("listening"); document.getElementById("saraLiveStatus").innerText = "● LISTENING"; document.getElementById("voiceStatusText").innerText = "Listening, Boss..."; };
             recognition.onerror = () => resetToIdleState();
             recognition.onend = () => { document.getElementById("avatarBox").classList.remove("listening"); if (!window.speechSynthesis.speaking) setTimeout(() => { try { recognition.start(); } catch (_) {} }, 800); };
-            recognition.onresult = async (e) => { const txt = e.results[e.results.length - 1][0].transcript.trim(); document.getElementById("voiceStatusText").innerText = `You: "${txt}"`; const q = txt.toLowerCase(); if (q.includes("open dashboard") || q.includes("dashboard kholo") || q.includes("dashboard khol")) { setDashboardView(true); speak("Dashboard khol rahi hu, Boss!"); return; } if (q.includes("close dashboard") || q.includes("dashboard band")) { setDashboardView(false); speak("Dashboard band kar rahi hu, Boss!"); return; } if (q.includes("open chatbot") || q.includes("chatbot kholo")) { speak("Boss, chatbot screen abhi development mein hai."); return; } await sendPayload(txt); };
+            recognition.onresult = async (e) => { const txt = e.results[e.results.length - 1][0].transcript.trim(); document.getElementById("voiceStatusText").innerText = `You: "${txt}"`; const q = txt.toLowerCase(); if (q.includes("open dashboard") || q.includes("dashboard kholo") || q.includes("dashboard khol")) { setDashboardView(true); speak("Dashboard khol rahi hu, Boss!"); return; } if (q.includes("open chatbot") || q.includes("chatbot kholo") || q.includes("chat bot kholo")) { openChatbot(); speak("Chatbot khol rahi hu, Boss!"); return; } if (q.includes("close chatbot") || q.includes("chatbot band") || q.includes("go home")) { closeChatbot(); setDashboardView(false); speak("Main screen par aa gaye, Boss."); return; } if (q.includes("close dashboard") || q.includes("dashboard band")) { setDashboardView(false); speak("Dashboard band kar rahi hu, Boss!"); return; } if (q.includes("open chatbot") || q.includes("chatbot kholo")) { speak("Boss, chatbot screen abhi development mein hai."); return; } await sendPayload(txt); };
         }
         function startVoiceListening() { if (recognition && !isSpeakingOrListening) { window.speechSynthesis.cancel(); recognition.start(); } }
         function resetToIdleState() { isSpeakingOrListening = false; triggerLipSync(false); document.getElementById("saraLiveStatus").innerText = "● ONLINE"; document.getElementById("voiceStatusText").innerText = "Tap SARA's face to talk again..."; }
-        function setDashboardView(show) { document.getElementById("secretDashboard").style.display = show ? "flex" : "none"; }
+        function setDashboardView(show) { document.getElementById("secretDashboard").style.display = show ? "flex" : "none"; if(show) closeChatbot(); }
+        function openChatbot() { document.getElementById("secretDashboard").style.display = "none"; document.getElementById("chatbotPanel").style.display = "flex"; }
+        function closeChatbot() { document.getElementById("chatbotPanel").style.display = "none"; }
+        document.getElementById("chatForm").addEventListener("submit", async (event) => { event.preventDefault(); const input=document.getElementById("chatInput"); const msg=input.value.trim(); if(!msg)return; const box=document.getElementById("chatMessages"); box.innerHTML += "<p><b>Boss:</b> "+escapeChat(msg)+"</p><p><b>SARA:</b> Soch rahi hu...</p>"; input.value=""; await sendPayload(msg); });
+        function escapeChat(value) { const el=document.createElement("div"); el.textContent=value; return el.innerHTML; }
         
         async function sendPayload(text) {
             const st = document.getElementById("voiceStatusText"); 
@@ -91,6 +100,7 @@
                     return;
                 }
                 if (d.response) { 
+                    if (document.getElementById("chatbotPanel").style.display === "flex") { const box=document.getElementById("chatMessages"); box.innerHTML += "<p><b>SARA:</b> "+escapeChat(d.response)+"</p>"; box.scrollTop=box.scrollHeight; }
                     st.innerText = `SARA: "${d.response}"`; const low = d.response.toLowerCase();
                     if (low.includes("dashboard khol") || low.includes("opening dashboard") || low.includes("dashboard khol rahi hu")) setDashboardView(true);
                     if (low.includes("dashboard band") || low.includes("closing dashboard") || low.includes("dashboard band kar rahi hu")) setDashboardView(false);
