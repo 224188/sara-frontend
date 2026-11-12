@@ -19,6 +19,7 @@
     </style>
 </head>
 <body>
+    <a href="./plugin-hub.html" style="position:fixed;top:14px;right:14px;z-index:20;padding:10px 14px;border:1px solid #665238;border-radius:12px;background:#211b15;color:#ffcc80;text-decoration:none;font-size:13px;">Plugin Hub ↗</a>
     <div class="main-chat">
         <div class="avatar-img-box" id="avatarBox" onclick="startVoiceListening()">
             <img src="https://unsplash.com" class="base-face">
@@ -54,7 +55,7 @@
             recognition.onstart = () => { isSpeakingOrListening = true; document.getElementById("avatarBox").classList.add("listening"); document.getElementById("saraLiveStatus").innerText = "● LISTENING"; document.getElementById("voiceStatusText").innerText = "Listening, Boss..."; };
             recognition.onerror = () => resetToIdleState();
             recognition.onend = () => document.getElementById("avatarBox").classList.remove("listening");
-            recognition.onresult = async (e) => { const txt = e.results.transcript; document.getElementById("voiceStatusText").innerText = `You: "${txt}"`; await sendPayload(txt); };
+            recognition.onresult = async (e) => { const txt = e.results[0][0].transcript; document.getElementById("voiceStatusText").innerText = `You: "${txt}"`; await sendPayload(txt); };
         }
         function startVoiceListening() { if (recognition && !isSpeakingOrListening) { window.speechSynthesis.cancel(); recognition.start(); } }
         function resetToIdleState() { isSpeakingOrListening = false; triggerLipSync(false); document.getElementById("saraLiveStatus").innerText = "● ONLINE"; document.getElementById("voiceStatusText").innerText = "Tap SARA's face to talk again..."; }
